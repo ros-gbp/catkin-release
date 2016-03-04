@@ -27,9 +27,9 @@ override_dh_auto_configure:
 	# set things like CMAKE_PREFIX_PATH, PKG_CONFIG_PATH, and PYTHONPATH.
 	if [ -f "/opt/ros/kinetic/setup.sh" ]; then . "/opt/ros/kinetic/setup.sh"; fi && \
 	dh_auto_configure -- \
-		-DCATKIN_BUILD_BINARY_PACKAGE="1" \
 		-DCMAKE_INSTALL_PREFIX="/opt/ros/kinetic" \
 		-DCMAKE_PREFIX_PATH="/opt/ros/kinetic"
+#		-DCATKIN_BUILD_BINARY_PACKAGE="1"
 
 override_dh_auto_build:
 	# In case we're installing to a non-standard location, look for a setup.sh
