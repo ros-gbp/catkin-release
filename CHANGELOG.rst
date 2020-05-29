@@ -2,36 +2,44 @@
 Changelog for package catkin
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-0.7.26 (2020-05-21)
--------------------
+0.8.6 (2020-05-28)
+------------------
+* error message python-empy -> python3-empy (`#1095 <https://github.com/ros/catkin/issues/1095>`_)
+
+0.8.5 (2020-05-21)
+------------------
 * stop catkin from trying to find C++ libraries if not needed (`#1083 <https://github.com/ros/catkin/issues/1083>`_)
 * [Windows] make more relocatable wrapper (`#1086 <https://github.com/ros/catkin/issues/1086>`_)
 * suppress FPHSA name mismatch for empy (`#1093 <https://github.com/ros/catkin/issues/1093>`_)
 
-0.7.25 (2020-05-14)
--------------------
+0.8.4 (2020-05-14)
+------------------
 * fix GTest detection when cmake-extras is installed (`#1091 <https://github.com/ros/catkin/issues/1091>`_)
 * fix gtest_source_paths (`#1088 <https://github.com/ros/catkin/issues/1088>`_)
 * fix -egg-base path to point to the build space (`#1090 <https://github.com/ros/catkin/issues/1090>`_)
+
+0.8.3 (2020-04-14)
+------------------
 * also rewrite shebang lines with whitespace in catkin_install_python (`#1079 <https://github.com/ros/catkin/issues/1079>`_)
 
-0.7.24 (2020-04-06)
--------------------
+0.8.2 (2020-04-06)
+------------------
+* use Python 3 shebang (`#1076 <https://github.com/ros/catkin/issues/1076>`_)
 * stamp env hook before copying (`#1075 <https://github.com/ros/catkin/issues/1075>`_)
-* set egg-base for setuptools packages (`#1073 <https://github.com/ros/catkin/issues/1073>`_) (`#1077 <https://github.com/ros/catkin/issues/1077>`_)
+* set egg-base for setuptools packages (`#1073 <https://github.com/ros/catkin/issues/1073>`_)
 * [Windows] Accommodate different drives for --root (`#1071 <https://github.com/ros/catkin/issues/1071>`_)
 * [Windows] stop setuptools egg packaging (`#1070 <https://github.com/ros/catkin/issues/1070>`_)
 
-0.7.23 (2020-03-02)
--------------------
+0.8.1 (2020-03-02)
+------------------
 * always pass --root to setuptools install (`#1068 <https://github.com/ros/catkin/issues/1068>`_)
-
-0.7.22 (2020-03-02)
--------------------
-* [Windows] rename catkin scripts for parallel package parsing support (`#1066 <https://github.com/ros/catkin/issues/1066>`_)
 * allow flexible CMake minimum version in metapackage CMake code (`#1065 <https://github.com/ros/catkin/issues/1065>`_)
 * [Windows] generate executables without extension name (`#1061 <https://github.com/ros/catkin/issues/1061>`_, `#1063 <https://github.com/ros/catkin/issues/1063>`_)
-* fix CATKIN_INSTALL_INTO_PREFIX_ROOT for win32 (`#1059 <https://github.com/ros/catkin/issues/1059>`_)
+* fix CATKIN_INSTALL_INTO_PREFIX_ROOT for win32 (`#1058 <https://github.com/ros/catkin/issues/1058>`_)
+
+0.8.0 (2020-01-24)
+------------------
+* install devel space wrapper for Python scripts (`#1044 <https://github.com/ros/catkin/issues/1044>`_)
 * various code cleanup (`#1055 <https://github.com/ros/catkin/issues/1055>`_)
 * make catkin_install_python code a little clearer (`#1054 <https://github.com/ros/catkin/issues/1054>`_)
 
@@ -43,7 +51,6 @@ Changelog for package catkin
 * Support use of gmake on FreeBSD (`#1051 <https://github.com/ros/catkin/issues/1051>`_)
 * Fix if statement in catkin_libraries (`#1050 <https://github.com/ros/catkin/issues/1050>`_)
 * Update gtest config documentation (`#1046 <https://github.com/ros/catkin/issues/1046>`_)
-* Contributors: Dirk Thomas, Matt Reynolds, Shane Loretz, dodsonmg, poggenhans
 
 0.7.20 (2019-12-10)
 -------------------
