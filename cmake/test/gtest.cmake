@@ -249,6 +249,10 @@ function(catkin_find_google_test_source gtest_path googletest_path
   list(APPEND _gtest_include_paths "${googletest_path}/googletest/include/gtest")
   list(APPEND _gtest_source_paths "${googletest_path}/googletest/src")
 
+  # Path to gtest from the gtest Arch Linux package. Header location already included
+  # list(APPEND _gtest_include_paths "${gtest_path}/include/gtest")
+  list(APPEND _gtest_source_paths "${googletest_path}/src")
+
   if(CATKIN_TOPLEVEL)
     # Ensure current workspace is searched before system path
     list(INSERT _gtest_include_paths 0 "${CMAKE_SOURCE_DIR}/googletest/googletest/include/gtest")
@@ -314,6 +318,24 @@ find_package(GMock QUIET)
 if(TARGET gtest AND TARGET gtest_main AND TARGET gmock AND TARGET gmock_main)
   set(GMOCK_FOUND TRUE)
   set(GTEST_FOUND TRUE)
+
+  # If we build these from source in a previous catkin (sub)project,
+  # define all variables from their FROM_SOURCE counterparts (again).
+  # As these variables are (explicitly!) not cached, they become reset on a new project.
+  if(GMOCK_FROM_SOURCE_FOUND)
+    set(GMOCK_INCLUDE_DIRS ${GMOCK_FROM_SOURCE_INCLUDE_DIRS})
+    set(GMOCK_LIBRARY_DIRS ${GMOCK_FROM_SOURCE_LIBRARY_DIRS})
+    set(GMOCK_LIBRARIES ${GMOCK_FROM_SOURCE_LIBRARIES})
+    set(GMOCK_MAIN_LIBRARIES ${GMOCK_FROM_SOURCE_MAIN_LIBRARIES})
+    set(GMOCK_BOTH_LIBRARIES ${GMOCK_LIBRARIES} ${GMOCK_MAIN_LIBRARIES})
+  endif()
+  if(GTEST_FROM_SOURCE_FOUND)
+    set(GTEST_INCLUDE_DIRS ${GTEST_FROM_SOURCE_INCLUDE_DIRS})
+    set(GTEST_LIBRARY_DIRS ${GTEST_FROM_SOURCE_LIBRARY_DIRS})
+    set(GTEST_LIBRARIES ${GTEST_FROM_SOURCE_LIBRARIES})
+    set(GTEST_MAIN_LIBRARIES ${GTEST_FROM_SOURCE_MAIN_LIBRARIES})
+    set(GTEST_BOTH_LIBRARIES ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES})
+  endif()
 else()
   find_package(GTest QUIET)
 endif()
