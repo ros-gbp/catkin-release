@@ -1,4 +1,4 @@
-From 016772f3a0f45ba346f5d69b3f5f497859fcb651 Mon Sep 17 00:00:00 2001
+From 0a3af1cfac0bd0c2ade3776ad8c5c8c207411c4d Mon Sep 17 00:00:00 2001
 From: Dirk Thomas <dirk-thomas@users.noreply.github.com>
 Date: Mon, 22 Jan 2018 13:54:39 -0800
 Subject: [PATCH] patch rules template to create setup files
