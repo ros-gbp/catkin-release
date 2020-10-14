@@ -42,8 +42,23 @@
 
 #ifdef _WIN32
 
+#include <fstream>
 #include <iostream>
+#include <string>
+
 #include <windows.h>
+
+static const std::string SHEBANG = "#!";
+
+static std::string dirnameOf(const std::string& fname)
+{
+    size_t pos = fname.find_last_of("\\/");
+    if (std::string::npos == pos)
+    {
+        throw ERROR_PATH_NOT_FOUND;
+    }
+    return fname.substr(0, pos);
+}
 
 int main(int argc, char* argv[]) try
 {
@@ -67,37 +82,69 @@ int main(int argc, char* argv[]) try
         return moduleName;
     };
 
-    const auto FindPythonScript = [](const std::string& exeName) -> std::string
+    const auto FindPythonScript = [](const std::string& exeFullPath) -> std::string
     {
-        // implement a heuristic here to execute a Python script of the same name
-        // when the executable's name is <name>.exe, assume the Python script to be <name>
-        // e.g. script.exe -> script, script.py.exe -> script.py
-        // note: script.exe will not execute script.py
-        const std::string exeExtension = ".exe";
-        if (exeName.size() <= exeExtension.size() || exeName.substr(exeName.size() - exeExtension.size()) != exeExtension)
-        {
-            throw L"Invalid name.";
-        }
-        auto scriptName = exeName.substr(0, exeName.size() - exeExtension.size());
+        std::string scriptName;
+        scriptName += dirnameOf(exeFullPath);
+        scriptName += "\\@ARG_SCRIPT_NAME@";
 
 #if defined(DEBUG)
         fprintf(stderr, "[DEBUG] Python script name: %s\n", scriptName.c_str());
 #endif
 
-        // use quoted string to ensure the correct path is used
-        return "\"" + scriptName + "\"";
+        return scriptName;
     };
 
-    const auto GetPythonExecutable = []() -> std::string
+    const auto GetPythonExecutable = [](const std::string& exeFullPath) -> std::string
     {
-        std::string pythonExecutable = "@PYTHON_EXECUTABLE@";
+        std::string scriptName;
+        scriptName += dirnameOf(exeFullPath);
+        scriptName += "\\@ARG_SCRIPT_NAME@";
+
+        std::ifstream infile(scriptName);
+
+        std::string firstLine;
+        if (std::getline(infile, firstLine) && firstLine.find(SHEBANG) == 0)
+        {
+            firstLine.erase(0, SHEBANG.size());
+
+            // spaces & tabs are considered as extra
+            std::string extra_chars(" \t");
+
+            // left trim extra characters.
+            auto ltrim = firstLine.find_first_not_of(extra_chars);
+            if (std::string::npos != ltrim)
+            {
+                firstLine.erase(0, ltrim);
+            }
+
+            // right trim extra characters.
+            auto rtrim = firstLine.find_last_not_of(extra_chars);
+            if (std::string::npos != rtrim)
+            {
+                firstLine.erase(rtrim + 1);
+            }
+        }
+
+        // Default to Python executable registered in runtime environment
+        std::string pythonExecutable = "python.exe";
+        if (!firstLine.empty() && 
+            (INVALID_FILE_ATTRIBUTES != GetFileAttributes(firstLine.c_str()))) // check file existence
+        {
+            pythonExecutable = firstLine;
+        }
 
 #if defined(DEBUG)
         fprintf(stderr, "[DEBUG] Python executable: %s\n", pythonExecutable.c_str());
 #endif
 
-        // use quoted string to indicate where the file name ends and the arguments begin
-        return "\"" + pythonExecutable + "\"";
+        return pythonExecutable;
+    };
+
+    const auto GetDoubleQuotedString = [](const std::string &input) -> std::string
+    {
+        // use quoted string to ensure the correct path is used
+        return "\"" + input + "\"";
     };
 
     const auto ExecuteCommand = [](std::string command, bool printError = false) -> unsigned long
@@ -166,27 +213,10 @@ int main(int argc, char* argv[]) try
     }
 #endif
 
-    auto pythonExecutable = GetPythonExecutable();
-    try
-    {
-        // check if the Python executable specified at configure time could be found
-        ExecuteCommand(pythonExecutable + " -c \"import sys; sys.exit(0)\"");
-    }
-    catch (...)
-    {
-        if (::GetLastError() == ERROR_FILE_NOT_FOUND)
-        {
-            // Python executable cannot be found, fall back to use Python executable registered in runtime environment
-            pythonExecutable = "python";
-        }
-        else
-        {
-            throw;
-        }
-    }
-
-    const auto pythonScript = FindPythonScript(GetCurrentModuleName());
-    std::string command = pythonExecutable + " " + pythonScript;
+    const std::string exeFullPath = GetCurrentModuleName();
+    const auto pythonExecutable = GetPythonExecutable(exeFullPath);
+    const auto pythonScript = FindPythonScript(exeFullPath);
+    std::string command = GetDoubleQuotedString(pythonExecutable) + " " + GetDoubleQuotedString(pythonScript);
     for (auto i = 1; i < argc; ++i)
     {
         command += " ";

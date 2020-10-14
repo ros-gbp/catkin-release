@@ -1,4 +1,4 @@
-# BUILD_SHARED_LIBS is a global cmake variable (usually defaults to on) 
+# BUILD_SHARED_LIBS is a global cmake variable (usually defaults to on)
 # that determines the build type of libraries:
 #   http://www.cmake.org/cmake/help/cmake-2-8-docs.html#variable:BUILD_SHARED_LIBS
 # It defaults to shared.
@@ -8,13 +8,13 @@ if(NOT DEFINED BUILD_SHARED_LIBS)
   option(BUILD_SHARED_LIBS "Build dynamically-linked binaries" ON)
 endif()
 
-# Windows/cmake make things difficult if building dll's. 
+# Windows/cmake make things difficult if building dll's.
 # By default:
 #   .dll -> CMAKE_RUNTIME_OUTPUT_DIRECTORY
 #   .exe -> CMAKE_RUNTIME_OUTPUT_DIRECTORY
 #   .lib -> CMAKE_LIBRARY_OUTPUT_DIRECTORY
 #
-# Subsequently, .dll's and .exe's use the same variable and by 
+# Subsequently, .dll's and .exe's use the same variable and by
 # default must be installed to the same place. Which is not
 # what we want for catkin. We wish:
 #
@@ -46,8 +46,8 @@ if(BUILD_SHARED_LIBS)
       list(FIND ARGN "INTERFACE" FIND_INTERFACE)
       _add_library(${ARGV0} ${ARGN})
       if(${FIND_IMPORTED} EQUAL -1 AND ${FIND_ALIAS} EQUAL -1 AND ${FIND_INTERFACE} EQUAL -1)
-        set_target_properties(${ARGV0} 
-          PROPERTIES 
+        set_target_properties(${ARGV0}
+          PROPERTIES
               RUNTIME_OUTPUT_DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_BIN_DESTINATION}
               RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_BIN_DESTINATION}
               RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_BIN_DESTINATION}
@@ -130,9 +130,12 @@ function(add_python_executable)
   endif()
 
   if(WIN32)
+    get_filename_component(WRAPPER_NAME
+      "${ARG_SCRIPT_NAME}"
+      NAME_WE)
     set(
       WRAPPER_SOURCE
-      "${CMAKE_CURRENT_BINARY_DIR}/catkin_generated/add_python_executable/${ARG_TARGET_NAME}/${ARG_SCRIPT_NAME}.cpp")
+      "${CMAKE_CURRENT_BINARY_DIR}/catkin_generated/add_python_executable/${ARG_TARGET_NAME}/${WRAPPER_NAME}.cpp")
     configure_file(
       "${catkin_EXTRAS_DIR}/templates/python_win32_wrapper.cpp.in"
       "${WRAPPER_SOURCE}"
@@ -140,10 +143,10 @@ function(add_python_executable)
 
     add_executable(${ARG_TARGET_NAME} "${WRAPPER_SOURCE}")
 
-    # The actual file name of the executable built on Windows will be ${ARG_SCRIPT_NAME}.exe according to OUTPUT_NAME
+    # The actual file name of the executable built on Windows will be ${WRAPPER_NAME}.exe according to OUTPUT_NAME
     set_target_properties(
       ${ARG_TARGET_NAME} PROPERTIES
-      OUTPUT_NAME "${ARG_SCRIPT_NAME}"
+      OUTPUT_NAME "${WRAPPER_NAME}"
       RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/catkin_generated/windows_wrappers/${ARG_TARGET_NAME}")
 
     install(
