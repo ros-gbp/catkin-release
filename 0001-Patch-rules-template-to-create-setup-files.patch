@@ -1,4 +1,4 @@
-From af9dac4216909ece938165c5d43873c61b209054 Mon Sep 17 00:00:00 2001
+From 487b47f6823d46f9a2ac3730365bf909c2620deb Mon Sep 17 00:00:00 2001
 From: Shane Loretz <sloretz@osrfoundation.org>
 Date: Mon, 6 Jan 2020 11:32:09 -0800
 Subject: [PATCH] Patch rules template to create setup files
