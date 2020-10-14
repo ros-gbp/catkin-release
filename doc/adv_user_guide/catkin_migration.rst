@@ -12,7 +12,7 @@ declared in a ``package.xml`` file.
 
 If in fuerte you had a stack with several subprojects acting as
 packages, this should be migrated to one metapackage and several
-packages for groovy. If instead you had a stack with sources, this 
+packages for groovy. If instead you had a stack with sources, this
 can become a single catkin package.
 
 Metapackages are not required for packages, they may just be helpful
@@ -75,7 +75,7 @@ The contents of the /stick/stick/package.xml must look like this::
 
 The contents of the /stick/stick/CMakeLists.txt looks like this::
 
-  cmake_minimum_required(VERSION 2.8.3)
+  cmake_minimum_required(VERSION 3.0.2)
   project(stick)
   find_package(catkin REQUIRED)
   catkin_metapackage()

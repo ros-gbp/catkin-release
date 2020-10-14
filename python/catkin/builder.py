@@ -63,6 +63,7 @@ except ImportError as e:
     )
 
 from catkin.cmake import get_cmake_path
+
 from catkin_pkg.package import InvalidPackage
 from catkin_pkg.terminal_color import ansi, disable_ANSI_colors, fmt, sanitize
 from catkin_pkg.workspaces import ensure_workspace_marker
@@ -143,11 +144,11 @@ def colorize_line(line):
     if line.startswith('-- +++'):
         # -- +++ add_subdirectory(package)
         cline = cline.replace('+++', '@!@{gf}+++@|')
-        cline = cline.replace('kin package: \'', 'kin package: \'@!@{bf}')
+        cline = cline.replace("kin package: '", "kin package: '@!@{bf}")
         cline = cline.replace(')', '@|)')
-        cline = cline.replace('\'\n', '@|\'\n')
-        cline = cline.replace('cmake package: \'', 'cmake package: \'@!@{bf}')
-        cline = cline.replace('\'\n', '@|\'\n')
+        cline = cline.replace("'\n", "@|'\n")
+        cline = cline.replace("cmake package: '", "cmake package: '@!@{bf}")
+        cline = cline.replace("'\n", "@|'\n")
     if line.startswith('-- ==>'):
         cline = cline.replace('-- ==>', '-- @!@{bf}==>@|')
     if line.lower().startswith('warning'):
@@ -244,6 +245,7 @@ def run_command(cmd, cwd, quiet=False, colorize=False, add_env=None):
         raise subprocess.CalledProcessError(proc.returncode, cmd)
     return out.getvalue() if quiet else ''
 
+
 blue_arrow = '@!@{bf}==>@|@!'
 
 
@@ -251,8 +253,8 @@ def _check_build_dir(name, workspace, buildspace):
     package_build_dir = os.path.join(buildspace, name)
     if not os.path.exists(package_build_dir):
         cprint(
-            blue_arrow + ' Creating build directory: \'' +
-            os.path.relpath(package_build_dir, workspace) + '\'@|'
+            blue_arrow + " Creating build directory: '" +
+            os.path.relpath(package_build_dir, workspace) + "'@|"
         )
         os.makedirs(package_build_dir)
     return package_build_dir
@@ -260,7 +262,7 @@ def _check_build_dir(name, workspace, buildspace):
 
 def isolation_print_command(cmd, path=None, add_env=None):
     cprint(
-        blue_arrow + " " + sanitize(cmd) + "@|" +
+        blue_arrow + ' ' + sanitize(cmd) + '@|' +
         (" @!@{kf}in@| '@!" + sanitize(path) + "@|'" if path else '') +
         (" @!@{kf}with@| '@!" + ' '.join(['%s=%s' % (k, v) for k, v in add_env.items()]) + "@|'" if add_env else '')
     )
@@ -342,7 +344,7 @@ def build_catkin_package(
     path, package,
     workspace, buildspace, develspace, installspace,
     install, force_cmake, quiet, last_env, cmake_args, make_args,
-    destdir=None, use_ninja=False, use_nmake=False
+    destdir=None, use_ninja=False, use_nmake=False, use_gmake=False
 ):
     cprint(
         "Processing @{cf}catkin@| package: '@!@{bf}" +
@@ -355,7 +357,7 @@ def build_catkin_package(
     # Check last_env
     if last_env is not None:
         cprint(
-            blue_arrow + " Building with env: " +
+            blue_arrow + ' Building with env: ' +
             "'{0}'".format(sanitize(last_env))
         )
 
@@ -396,7 +398,7 @@ def build_catkin_package(
             cmake_cmd = [last_env] + cmake_cmd
         try:
             run_command_colorized(cmake_cmd, build_dir, quiet, add_env=add_env)
-        except subprocess.CalledProcessError as e:
+        except subprocess.CalledProcessError:
             if os.path.exists(makefile):
                 # remove Makefile to force CMake invocation next time
                 os.remove(makefile)
@@ -408,6 +410,8 @@ def build_catkin_package(
             make_check_cmake_cmd = ['ninja', 'build.ninja']
         elif use_nmake:
             make_check_cmake_cmd = ['nmake', 'cmake_check_build_system']
+        elif use_gmake:
+            make_check_cmake_cmd = ['gmake', 'cmake_check_build_system']
         else:
             make_check_cmake_cmd = ['make', 'cmake_check_build_system']
 
@@ -424,6 +428,8 @@ def build_catkin_package(
         make_executable = 'ninja'
     elif use_nmake:
         make_executable = 'nmake'
+    elif use_gmake:
+        make_executable = 'gmake'
     else:
         make_executable = 'make'
 
@@ -437,7 +443,7 @@ def build_catkin_package(
     # Make install
     # NMake doesn't have an option to list target so try it anyway
     if install or use_nmake:
-        if has_make_target(build_dir, 'install', use_ninja=use_ninja, use_nmake=use_nmake):
+        if has_make_target(build_dir, 'install', use_ninja=use_ninja, use_nmake=use_nmake, use_gmake=use_gmake):
             make_install_cmd = [make_executable, 'install']
             isolation_print_command(' '.join(make_install_cmd), build_dir)
             if last_env is not None:
@@ -449,18 +455,20 @@ def build_catkin_package(
                 % make_executable))
 
 
-def has_make_target(path, target, use_ninja=False, use_nmake=False):
+def has_make_target(path, target, use_ninja=False, use_nmake=False, use_gmake=False):
     if use_ninja:
         output = run_command(['ninja', '-t', 'targets'], path, quiet=True)
     elif use_nmake:
         output = run_command(['nmake', '/PNC'], path, quiet=True)
+    elif use_gmake:
+        output = run_command(['gmake', '-pn'], path, quiet=True)
     else:
         output = run_command(['make', '-pn'], path, quiet=True)
     lines = output.splitlines()
     # strip nanja warnings since they look similar to targets
     if use_ninja:
         lines = [l for l in lines if not l.startswith('ninja: warning:')]
-    targets = [m.group(1) for m in [re.match('^([a-zA-Z0-9][a-zA-Z0-9_\.]*):', l) for l in lines] if m]
+    targets = [m.group(1) for m in [re.match(r'^([a-zA-Z0-9][a-zA-Z0-9_\.]*):', l) for l in lines] if m]
     return target in targets
 
 
@@ -576,7 +584,7 @@ def build_cmake_package(
     path, package,
     workspace, buildspace, develspace, installspace,
     install, force_cmake, quiet, last_env, cmake_args, make_args,
-    destdir=None, use_ninja=False, use_nmake=False
+    destdir=None, use_ninja=False, use_nmake=False, use_gmake=False
 ):
     # Notify the user that we are processing a plain cmake package
     cprint(
@@ -593,7 +601,7 @@ def build_cmake_package(
 
     # Check last_env
     if last_env is not None:
-        cprint(blue_arrow + " Building with env: " +
+        cprint(blue_arrow + ' Building with env: ' +
                "'{0}'".format(sanitize(last_env)))
 
     # Check for Makefile and maybe call cmake
@@ -622,6 +630,8 @@ def build_cmake_package(
             make_check_cmake_cmd = ['ninja', 'build.ninja']
         elif use_nmake:
             make_check_cmake_cmd = ['nmake', 'cmake_check_build_system']
+        elif use_gmake:
+            make_check_cmake_cmd = ['gmake', 'cmake_check_build_system']
         else:
             make_check_cmake_cmd = ['make', 'cmake_check_build_system']
 
@@ -637,6 +647,8 @@ def build_cmake_package(
         make_executable = 'ninja'
     elif use_nmake:
         make_executable = 'nmake'
+    elif use_gmake:
+        make_executable = 'gmake'
     else:
         make_executable = 'make'
     make_cmd = [make_executable]
@@ -660,7 +672,7 @@ def build_cmake_package(
     # If an env script already exists, don't overwrite it
     if install and os.path.exists(prefix_destdir(os.path.join(install_target, env_script), destdir)):
         return
-    cprint(blue_arrow + " Generating an " + env_script)
+    cprint(blue_arrow + ' Generating an ' + env_script)
     # Generate env script for chaining to catkin packages
     # except if using --merge which implies that new_env_path equals last_env
     new_env_path = os.path.join(install_target, env_script)
@@ -723,12 +735,12 @@ def build_package(
     path, package,
     workspace, buildspace, develspace, installspace,
     install, force_cmake, quiet, last_env, cmake_args, make_args, catkin_make_args,
-    destdir=None, use_ninja=False, use_nmake=False,
+    destdir=None, use_ninja=False, use_nmake=False, use_gmake=False,
     number=None, of=None
 ):
     if platform.system() in ['Linux', 'Darwin'] and sys.stdout.isatty():
         status_msg = '{package_name} [{number} of {total}]'.format(package_name=package.name, number=number, total=of)
-        sys.stdout.write("\x1b]2;" + status_msg + "\x07")
+        sys.stdout.write('\x1b]2;' + status_msg + '\x07')
     cprint('@!@{gf}==>@| ', end='')
     new_last_env = get_new_env(package, develspace, installspace, install, last_env, destdir)
     try:
@@ -740,21 +752,21 @@ def build_package(
             path, package,
             workspace, buildspace, develspace, installspace,
             install, force_cmake, quiet, last_env, cmake_args, make_args + catkin_make_args,
-            destdir=destdir, use_ninja=use_ninja, use_nmake=use_nmake
+            destdir=destdir, use_ninja=use_ninja, use_nmake=use_nmake, use_gmake=use_gmake
         )
         if not os.path.exists(new_last_env):
             raise RuntimeError(
                 "No env.sh file generated at: '" + new_last_env +
                 "'\n  This sometimes occurs when a non-catkin package is "
-                "interpreted as a catkin package.\n  This can also occur "
-                "when the cmake cache is stale, try --force-cmake."
+                'interpreted as a catkin package.\n  This can also occur '
+                'when the cmake cache is stale, try --force-cmake.'
             )
     elif build_type == 'cmake':
         build_cmake_package(
             path, package,
             workspace, buildspace, develspace, installspace,
             install, force_cmake, quiet, last_env, cmake_args, make_args,
-            destdir=destdir, use_ninja=use_ninja, use_nmake=use_nmake
+            destdir=destdir, use_ninja=use_ninja, use_nmake=use_nmake, use_gmake=use_gmake
         )
     else:
         sys.exit('Can not build package with unknown build_type')
@@ -762,8 +774,8 @@ def build_package(
         msg = ' [@{gf}@!' + str(number) + '@| of @!@{gf}' + str(of) + '@|]'
     else:
         msg = ''
-    cprint('@{gf}<==@| Finished processing package' + msg + ': \'@{bf}@!' +
-           package.name + '@|\'')
+    cprint('@{gf}<==@| Finished processing package' + msg + ": '@{bf}@!" +
+           package.name + "@|'")
     return new_last_env
 
 
@@ -795,7 +807,7 @@ def prefix_destdir(path, destdir=None):
 
 def _print_build_error(package, e):
     e_msg = 'KeyboardInterrupt' if isinstance(e, KeyboardInterrupt) else str(e)
-    cprint('@{rf}@!<==@| Failed to process package \'@!@{bf}' + package.name + '@|\': \n  ' + e_msg)
+    cprint("@{rf}@!<==@| Failed to process package '@!@{bf}" + package.name + "@|': \n  " + e_msg)
 
 
 def build_workspace_isolated(
@@ -819,11 +831,13 @@ def build_workspace_isolated(
     destdir=None,
     use_ninja=False,
     use_nmake=False,
+    use_gmake=False,
     override_build_tool_check=False
 ):
-    '''
-    Runs ``cmake``, ``make`` and optionally ``make install`` for all
-    catkin packages in sourcespace_dir.  It creates several folders
+    """
+    Run ``cmake``, ``make`` and optionally ``make install`` for all catkin packages in sourcespace_dir.
+
+    It creates several folders
     in the current working directory. For non-catkin packages it runs
     ``cmake``, ``make`` and ``make install`` for each, installing it to
     the devel space or install space if the ``install`` option is specified.
@@ -856,9 +870,10 @@ def build_workspace_isolated(
     :param destdir: define DESTDIR for cmake/invocation, ``string``
     :param use_ninja: if True, use ninja instead of make, ``bool``
     :param use_nmake: if True, use nmake instead of make, ``bool``
+    :param use_gmake: if True, use gmake instead of make, ``bool``
     :param override_build_tool_check: if True, build even if a space was built
         by another tool previously.
-    '''
+    """
     if not colorize:
         disable_ANSI_colors()
 
@@ -888,12 +903,12 @@ def build_workspace_isolated(
         if override_build_tool_check:
             print(fmt(
                 "@{yf}Warning: build space at '%s' was previously built by '%s', "
-                "but --override-build-tool-check was passed so continuing anyways."
+                'but --override-build-tool-check was passed so continuing anyways.'
                 % (buildspace, previous_tool)))
         else:
             sys.exit(fmt(
                 "@{rf}The build space at '%s' was previously built by '%s'. "
-                "Please remove the build space or pick a different build space."
+                'Please remove the build space or pick a different build space.'
                 % (buildspace, previous_tool)))
     mark_space_as_built_by(buildspace, 'catkin_make_isolated')
 
@@ -908,12 +923,12 @@ def build_workspace_isolated(
         if override_build_tool_check:
             print(fmt(
                 "@{yf}Warning: devel space at '%s' was previously built by '%s', "
-                "but --override-build-tool-check was passed so continuing anyways."
+                'but --override-build-tool-check was passed so continuing anyways.'
                 % (develspace, previous_tool)))
         else:
             sys.exit(fmt(
                 "@{rf}The devel space at '%s' was previously built by '%s'. "
-                "Please remove the devel space or pick a different devel space."
+                'Please remove the devel space or pick a different devel space.'
                 % (develspace, previous_tool)))
     mark_space_as_built_by(develspace, 'catkin_make_isolated')
 
@@ -923,7 +938,7 @@ def build_workspace_isolated(
     print('Install space: ' + str(installspace))
 
     if cmake_args:
-        print("Additional CMake Arguments: " + " ".join(cmake_args))
+        print('Additional CMake Arguments: ' + ' '.join(cmake_args))
     else:
         cmake_args = []
 
@@ -933,25 +948,26 @@ def build_workspace_isolated(
         elif use_nmake:
             cmake_args += ['-G', 'NMake Makefiles']
         else:
+            # no need to check for use_gmake, as it uses the same generator as make
             cmake_args += ['-G', 'Unix Makefiles']
     elif use_ninja or use_nmake:
         print(colorize_line("Error: either specify a generator using '-G...' or '--use-[ninja|nmake]' but not both"))
         sys.exit(1)
 
     if make_args:
-        print("Additional make Arguments: " + " ".join(make_args))
+        print('Additional make Arguments: ' + ' '.join(make_args))
     else:
         make_args = []
 
     if catkin_make_args:
-        print("Additional make Arguments for catkin packages: " + " ".join(catkin_make_args))
+        print('Additional make Arguments for catkin packages: ' + ' '.join(catkin_make_args))
     else:
         catkin_make_args = []
 
     # Find packages
     packages = find_packages(sourcespace, exclude_subspaces=True)
     if not packages:
-        print(fmt("@{yf}No packages found in source space: %s@|" % sourcespace))
+        print(fmt('@{yf}No packages found in source space: %s@|' % sourcespace))
 
     # whitelist packages and their dependencies in workspace
     if only_pkg_with_deps:
@@ -1048,7 +1064,7 @@ def build_workspace_isolated(
                     workspace, buildspace, pkg_develspace, installspace,
                     install, force_cmake,
                     quiet, last_env, cmake_args, make_args, catkin_make_args,
-                    destdir=destdir, use_ninja=use_ninja, use_nmake=use_nmake,
+                    destdir=destdir, use_ninja=use_ninja, use_nmake=use_nmake, use_gmake=use_gmake,
                     number=index + 1, of=len(ordered_packages)
                 )
             except subprocess.CalledProcessError as e:
@@ -1062,8 +1078,8 @@ def build_workspace_isolated(
                     cmd += ' '.join([quote(arg) for arg in e.cmd])
                 else:
                     cmd += e.cmd
-                print(fmt("\n@{rf}Reproduce this error by running:"))
-                print(fmt("@{gf}@!==> @|") + cmd + "\n")
+                print(fmt('\n@{rf}Reproduce this error by running:'))
+                print(fmt('@{gf}@!==> @|') + cmd + '\n')
                 sys.exit('Command failed, exiting.')
             except Exception as e:
                 print("Unhandled exception of type '{0}':".format(type(e).__name__))
@@ -1157,7 +1173,7 @@ _CATKIN_SETUP_DIR= . "{0}/setup.sh"
                         variables))
                 os.chmod(generated_setup_util_py, stat.S_IXUSR | stat.S_IWUSR | stat.S_IRUSR)
             else:
-                sys.exit("Unable to process CMAKE_PREFIX_PATH from environment. Cannot generate environment files.")
+                sys.exit('Unable to process CMAKE_PREFIX_PATH from environment. Cannot generate environment files.')
 
             variables = {
                 'SETUP_DIR': develspace,
@@ -1207,7 +1223,7 @@ def cmake_input_changed(packages, build_path, cmake_args=None, filename='catkin_
 
 
 def get_package_names_with_recursive_dependencies(packages, pkg_names):
-    dependencies = set([])
+    dependencies = set()
     check_pkg_names = set(pkg_names)
     packages_by_name = {p.name: p for path, p in packages.items()}
     while check_pkg_names:
@@ -1225,6 +1241,7 @@ def get_package_names_with_recursive_dependencies(packages, pkg_names):
                 if dep in packages_by_name and dep not in check_pkg_names and dep not in dependencies:
                     check_pkg_names.add(dep)
     return dependencies
+
 
 def apply_platform_specific_defaults(args):
     # add Windows specific defaults
