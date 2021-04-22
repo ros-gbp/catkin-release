@@ -1,0 +1,12 @@
+Source: ros-noetic-catkin
+Section: misc
+Priority: optional
+Maintainer: Michael Carroll <michael@openrobotics.org>
+Build-Depends: debhelper (>= 9.0.0), cmake, python3-catkin-pkg (>> 0.4.3), python3-empy, python3-mock, python3-nose, python3-setuptools
+Homepage: http://wiki.ros.org/catkin
+Standards-Version: 3.9.2
+
+Package: ros-noetic-catkin
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, cmake, google-mock, libgtest-dev, python3-catkin-pkg (>> 0.4.3), python3-empy, python3-nose, python3-setuptools
+Description: Low-level build system macros and infrastructure for ROS.
