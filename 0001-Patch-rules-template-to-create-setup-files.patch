@@ -1,4 +1,4 @@
-From a0806c1510f3287c38fba901acac62938dffde24 Mon Sep 17 00:00:00 2001
+From 011bafb2915030f88534db41a52b17349c461da1 Mon Sep 17 00:00:00 2001
 From: Shane Loretz <sloretz@osrfoundation.org>
 Date: Mon, 6 Jan 2020 11:32:09 -0800
 Subject: [PATCH] Patch rules template to create setup files
@@ -9,20 +9,21 @@ Signed-off-by: Shane Loretz <sloretz@osrfoundation.org>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/debian/rules.em b/debian/rules.em
-index 1c02dd40..cf3f353a 100755
+index 276329db..564f26f5 100755
 --- a/debian/rules.em
 +++ b/debian/rules.em
-@@ -27,9 +27,9 @@ override_dh_auto_configure:
+@@ -32,10 +32,10 @@ override_dh_auto_configure:
  	# set things like CMAKE_PREFIX_PATH, PKG_CONFIG_PATH, and PYTHONPATH.
  	if [ -f "@(InstallationPrefix)/setup.sh" ]; then . "@(InstallationPrefix)/setup.sh"; fi && \
  	dh_auto_configure -- \
 -		-DCATKIN_BUILD_BINARY_PACKAGE="1" \
  		-DCMAKE_INSTALL_PREFIX="@(InstallationPrefix)" \
- 		-DCMAKE_PREFIX_PATH="@(InstallationPrefix)"
+ 		-DCMAKE_PREFIX_PATH="@(InstallationPrefix)" \
+ 		$(BUILD_TESTING_ARG)
 +		# -DCATKIN_BUILD_BINARY_PACKAGE="1" \
  
  override_dh_auto_build:
  	# In case we're installing to a non-standard location, look for a setup.sh
 -- 
-2.49.0.604.gff1f9ca942-goog
+2.49.0.850.g28803427d3-goog
 
